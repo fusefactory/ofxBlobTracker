@@ -19,7 +19,7 @@ ofxBlobTracker::ofxBlobTracker(){
     
     movementFiltering = 0;
     
-    bUpdateBackground = true;
+    bUpdateBackground = false;
 }
 
 void ofxBlobTracker::update( ofxCvGrayscaleImage& input, int _threshold, int _minArea,int _maxArea , int _nConsidered , double _hullPress , bool _bFindHoles , bool _bUseApproximation ){
@@ -37,7 +37,7 @@ void ofxBlobTracker::update( ofxCvGrayscaleImage& input, int _threshold, int _mi
         bUpdateBackground = false;
     }
     
-    input.absDiff(backgroundImage);
+    //input.absDiff(backgroundImage);
     
     if (_threshold != -1)
         input.threshold(_threshold);
@@ -248,8 +248,9 @@ void ofxBlobTracker::track(ofxContourFinder* newBlobs){
 	for(int i = 0; i < newBlobs->nBlobs; i++){
 		if(newBlobs->blobs[i].id==-1){
 			//add new track
-			newBlobs->blobs[i].id = IDCounter++;
-			IDCounter++;
+            IDCounter = (IDCounter+1)%2;
+
+            newBlobs->blobs[i].id = IDCounter ;
 			newBlobs->blobs[i].downTime = ofGetElapsedTimef();
 			//newBlobs->blobs[i].lastTimeTimeWasChecked = ofGetElapsedTimeMillis();
             

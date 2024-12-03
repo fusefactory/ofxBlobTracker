@@ -75,10 +75,8 @@ int ofxContourFinder::findContours(	ofxCvGrayscaleImage&  input,
 	contour_storage = cvCreateMemStorage( 1000 );
 	storage	= cvCreateMemStorage( 1000 );
 
-	CvContourRetrievalMode  retrieve_mode
-        = (bFindHoles) ? CV_RETR_LIST : CV_RETR_EXTERNAL;
 	cvFindContours( inputCopy.getCvImage(), contour_storage, &contour_list,
-                    sizeof(CvContour), retrieve_mode, bUseApproximation ? CV_CHAIN_APPROX_SIMPLE : CV_CHAIN_APPROX_NONE );
+                   sizeof(CvContour), CV_RETR_EXTERNAL, bUseApproximation ? CV_CHAIN_APPROX_SIMPLE : CV_CHAIN_APPROX_NONE );
 	
 	CvSeq* contour_ptr = contour_list;
 
@@ -140,78 +138,7 @@ int ofxContourFinder::findContours(	ofxCvGrayscaleImage&  input,
             
             // Check if it´s a Hand and if it have fingers
             //
-            if (area > 5000){
-                CvPoint*    PointArray;
-                int*        hull;
-                int         hullsize;
-                
-                CvSeq*  contourAprox = cvApproxPoly(contour_ptr, sizeof(CvContour), storage, CV_POLY_APPROX_DP, hullPress, 1 );
-                int count = contourAprox->total; // This is number point in contour
-                    
-        
-                PointArray = (CvPoint*)malloc( count*sizeof(CvPoint) ); // Alloc memory for contour point set.
-                hull = (int*)malloc(sizeof(int)*count);	// Alloc memory for indices of convex hull vertices.
-                
-                cvCvtSeqToArray(contourAprox, PointArray, CV_WHOLE_SEQ); // Get contour point set.
-                
-                // Find convex hull for curent contour.
-                cvConvexHull( PointArray, count, NULL, CV_COUNTER_CLOCKWISE, hull, &hullsize);
-                
-                int upper = 1, lower = 0;
-                for	(int j=0; j<hullsize; j++) {
-                    int idx = hull[j]; // corner index
-                    if (PointArray[idx].y < upper) 
-                        upper = PointArray[idx].y;
-                    if (PointArray[idx].y > lower) 
-                        lower = PointArray[idx].y;
-                }
-                
-                float cutoff = lower - (lower - upper) * 0.1f;
-                // find interior angles of hull corners
-                for (int j=0; j < hullsize; j++) {
-                    int idx = hull[j]; // corner index
-                    int pdx = idx == 0 ? count - 1 : idx - 1; //  predecessor of idx
-                    int sdx = idx == count - 1 ? 0 : idx + 1; // successor of idx
-                    
-                    cv::Point v1 = cv::Point(PointArray[sdx].x - PointArray[idx].x, PointArray[sdx].y - PointArray[idx].y);
-                    cv::Point v2 = cv::Point(PointArray[pdx].x - PointArray[idx].x, PointArray[pdx].y - PointArray[idx].y);
-                    
-                    float angle = acos( (v1.x*v2.x + v1.y*v2.y) / (norm(v1) * norm(v2)) );
-                    
-                    // We got a finger
-                    //
-                    if (angle < 1 ){
-                        ofPoint posibleFinger = ofPoint((float)PointArray[idx].x / width, 
-                                                        (float)PointArray[idx].y / height);
-                        
-                        blob.nFingers++;
-                        blob.fingers.push_back( posibleFinger );
-                    }
-                }
-                
-                
-                if ( blob.nFingers > 0 ){
-                    // because means that probably it's a hand                    
-                    ofVec2f fingersAverage;
-                    for (int j = 0; j < blob.fingers.size(); j++){
-                        fingersAverage += blob.fingers[j];
-                    }
-                    
-                    fingersAverage /= blob.fingers.size();
-                    
-                    if (blob.gotFingers){
-                        blob.palm = (blob.palm + fingersAverage)*0.5;
-                        //blob.palm = fingersAverage;
-                    } else {
-                        blob.palm = fingersAverage;
-                        blob.gotFingers = true;   // If got more than three fingers in a road it'll remember
-                    }
-                }
-                
-                // Free memory.
-                free(PointArray);
-                free(hull);
-            }
+
             
             blobs.push_back(blob);
         }
